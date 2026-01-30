@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  contract:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: employment-contract
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./server/.env:/app/server/.env:ro
+    networks:
+      - moellab-network
+
+networks:
+  moellab-network:
+    external: true

@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import dotenv from 'dotenv';
 import { readFile } from 'fs/promises';
+import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -65,17 +66,31 @@ async function loadPrompts() {
   }
 }
 
+// 프로덕션 환경에서 정적 파일 서빙 (빌드된 프론트엔드)
+const distPath = join(__dirname, '..', 'dist');
+if (existsSync(distPath)) {
+  app.use('/contract', express.static(distPath));
+  console.log('📁 정적 파일 서빙 활성화:', distPath);
+}
+
 // 라우터 등록 (upload 미들웨어 적용)
 app.use('/api/admin', upload.single('file'), adminRoutes);
 app.use('/api/ocr', upload.single('file'), ocrRoutes);
 app.use('/api', analysisRoutes);
 app.use('/api/tips', tipsRoutes);
 
+// SPA 라우팅 지원 (프론트엔드 라우트)
+if (existsSync(distPath)) {
+  app.get('/contract/*', (req, res) => {
+    res.sendFile(join(distPath, 'index.html'));
+  });
+}
+
 // 에러 핸들링 미들웨어
 app.use(errorMiddleware);
 
 // 서버 시작
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, async () => {
   console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);

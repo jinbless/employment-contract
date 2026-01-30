@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://localhost:3001';
+// 환경에 따른 API 베이스 URL 설정
+const API_BASE_URL = import.meta.env.PROD
+  ? '/contract/api'  // 프로덕션: nginx가 프록시
+  : 'http://localhost:3001';  // 개발: 로컬 서버
 
 export const apiClient = {
   get: (endpoint) => fetch(`${API_BASE_URL}${endpoint}`),
