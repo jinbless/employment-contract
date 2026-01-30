@@ -1,5 +1,6 @@
 services:
   contract:
+    image: employment-contract
     build:
       context: .
       dockerfile: Dockerfile
