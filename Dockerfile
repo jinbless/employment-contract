@@ -26,9 +26,9 @@ COPY server/ ./server/
 # Copy built frontend
 COPY --from=frontend-builder /app/frontend/dist ./dist
 
-# Copy data files (XLSX, CSV)
-COPY *.xlsx ./
-COPY server/*.csv ./server/
+# Copy data files (legal XLSX, templates CSV)
+COPY data/legal/*.xlsx ./data/legal/
+COPY data/templates/*.csv ./data/templates/
 
 # Environment
 ENV NODE_ENV=production

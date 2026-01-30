@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/errorHandler.js';
-import { laborLawTips } from '../data/laborLawTips.js';
+import { laborLawTips } from '../tips/laborLawTips.js';
 
 const router = Router();
 

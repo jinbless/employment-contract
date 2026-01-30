@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .env
 .claude/
+
+# Test samples (user uploaded images)
+test/samples/

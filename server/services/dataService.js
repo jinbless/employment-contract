@@ -41,12 +41,13 @@ class DataService {
     this.ensureInitialized();
 
     try {
-      const files = await readdir(this.rootDir);
+      const legalDataDir = join(this.rootDir, 'data', 'legal');
+      const files = await readdir(legalDataDir);
       const xlsxFiles = files.filter(f => f.endsWith('.xlsx'));
 
       xlsxFiles.forEach(file => {
         const category = file.split('_')[0];
-        this.xlsxFileMap.set(category, join(this.rootDir, file));
+        this.xlsxFileMap.set(category, join(legalDataDir, file));
       });
 
       // 별칭 설정
@@ -67,7 +68,7 @@ class DataService {
     this.ensureInitialized();
 
     try {
-      const csvPath = join(this.serverDir, '근로계약서_updated.csv');
+      const csvPath = join(this.rootDir, 'data', 'templates', '근로계약서_updated.csv');
       const data = await readFile(csvPath, 'utf-8');
       const lines = data.split('\n').filter(line => line.trim());
       const headers = lines[0].split(',');
@@ -189,12 +190,14 @@ class DataService {
   async listDatabaseFiles() {
     this.ensureInitialized();
 
-    const rootFiles = await readdir(this.rootDir);
-    const serverFiles = await readdir(this.serverDir);
+    const legalDataDir = join(this.rootDir, 'data', 'legal');
+    const templatesDir = join(this.rootDir, 'data', 'templates');
+    const legalFiles = await readdir(legalDataDir);
+    const templateFiles = await readdir(templatesDir);
 
     return [
-      ...rootFiles.filter(f => f.endsWith('.xlsx')).map(f => ({ name: f, type: 'xlsx', location: 'root' })),
-      ...serverFiles.filter(f => f.endsWith('.csv')).map(f => ({ name: f, type: 'csv', location: 'server' }))
+      ...legalFiles.filter(f => f.endsWith('.xlsx')).map(f => ({ name: f, type: 'xlsx', location: 'data/legal' })),
+      ...templateFiles.filter(f => f.endsWith('.csv')).map(f => ({ name: f, type: 'csv', location: 'data/templates' }))
     ];
   }
 
