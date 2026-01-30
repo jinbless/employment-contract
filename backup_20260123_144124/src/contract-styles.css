@@ -1,0 +1,68 @@
+.suggested-contract-box {
+    background: white;
+    padding: 3rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    font-family: 'Malgun Gothic', sans-serif;
+    line-height: 1.8;
+    color: #1e293b;
+    overflow-y: auto;
+    max-height: 600px;
+    text-align: left;
+}
+
+.suggested-contract-box table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.suggested-contract-box td,
+.suggested-contract-box th {
+    border: 1px solid #cbd5e1;
+    padding: 10px;
+    text-align: left;
+}
+
+.suggested-contract-box h1,
+.suggested-contract-box h2 {
+    color: #1e293b;
+    margin: 1.5rem 0 1rem 0;
+}
+
+@media print {
+
+    .hero-section,
+    .navbar,
+    .StepIndicator,
+    .document-viewer,
+    .risk-summary-card,
+    .analysis-table-container,
+    .recommendations-content,
+    button,
+    .split-container>div:first-child {
+        display: none !important;
+    }
+
+    .analysis-overlay,
+    body {
+        position: static !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    .analysis-panel {
+        width: 100% !important;
+        padding: 0 !important;
+        position: static !important;
+    }
+
+    .suggested-contract-box {
+        max-height: none !important;
+        border: none !important;
+        padding: 20px !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+}

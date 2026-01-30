@@ -1,0 +1,643 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, FileText, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, XCircle, Search, Scale, SlidersHorizontal, ChevronDown, ExternalLink, Edit3, Check, MousePointer2, Download } from 'lucide-react';
+import EditableStructureTable from './EditableStructureTable';
+import Tooltip from './Tooltip';
+import { legalRequirements } from './legalRequirements';
+import { getRandomTip } from './loadingTips';
+
+// --- Sub-components ---
+
+const StepIndicator = ({ currentStep }) => {
+    const steps = [
+        { id: 'upload', label: '1. 사진 업로드', icon: Upload },
+        { id: 'structured', label: '2. 정보 매핑', icon: FileText },
+        { id: 'result', label: '3. 결과 분석', icon: ShieldCheck },
+        { id: 'contract', label: '4. 계약서 작성', icon: FileText },
+    ];
+
+    const currentIdx = steps.findIndex(s => s.id === currentStep);
+
+    return (
+        <div className="step-container">
+            {steps.map((step, idx) => {
+                const Icon = step.icon;
+                const isActive = idx === currentIdx;
+                const isCompleted = idx < currentIdx;
+
+                return (
+                    <div key={step.id} className={`step-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
+                        <div className="step-icon-box">
+                            {isCompleted ? <Check size={24} /> : <Icon size={24} />}
+                        </div>
+                        <span className="step-label">{step.label}</span>
+                        <div className="step-line" />
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+// --- Main App ---
+
+const App = () => {
+    const [selectedService, setSelectedService] = useState(null);
+    const [files, setFiles] = useState([]); // Changed from single file to array
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [result, setResult] = useState(null);
+    const [companySize, setCompanySize] = useState("5more");
+    const [workerType, setWorkerType] = useState("regular");
+    const [currentStep, setCurrentStep] = useState('upload');
+    const [extractedText, setExtractedText] = useState("");
+    const [structuredData, setStructuredData] = useState(""); // 🆕 구조화된 데이터
+    const [previewUrls, setPreviewUrls] = useState([]); // Changed to array
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generatedContract, setGeneratedContract] = useState(null);
+
+    // Helpers to get char image by service
+    const getCharImage = (svc) => {
+        if (svc === 'contract') return '/contract_char.png';
+        if (svc === 'rule') return '/rule_char.png';
+        if (svc === 'salary') return '/salary_char.png';
+        return null;
+    };
+
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const selectedFiles = Array.from(e.target.files);
+            setFiles(selectedFiles);
+
+            // Generate preview URLs for all files
+            if (previewUrls.length > 0) {
+                previewUrls.forEach(url => URL.revokeObjectURL(url));
+            }
+            const newPreviewUrls = selectedFiles.map(file => URL.createObjectURL(file));
+            setPreviewUrls(newPreviewUrls);
+        }
+    };
+
+    const extractOCR = async () => {
+        if (files.length === 0) { alert('파일을 먼저 선택해주세요.'); return; }
+        setIsAnalyzing(true); setProgress(0);
+
+        let combinedText = "";
+        const totalFiles = files.length;
+
+        // Progress interval just for visual effect
+        const interval = setInterval(() => { setProgress(prev => Math.min(prev + 5, 90)); }, 300);
+
+        try {
+            for (let i = 0; i < totalFiles; i++) {
+                const fd = new FormData();
+                fd.append('file', files[i]);
+
+                // Update progress based on file processing
+                const currentProgress = Math.round(((i) / totalFiles) * 90);
+                setProgress(currentProgress);
+
+                const res = await fetch('http://localhost:3001/api/ocr/extract', { method: 'POST', body: fd });
+                if (!res.ok) throw new Error(`파일 ${i + 1} OCR 실패`);
+
+                const data = await res.json();
+                if (data.extractedText) {
+                    combinedText += `\n--- 문서 ${i + 1} ---\n` + data.extractedText + "\n";
+                }
+            }
+
+            clearInterval(interval); setProgress(100);
+            setExtractedText(combinedText.trim());
+
+            // 🆕 구조화 단계로 이동
+            await structureData(combinedText.trim());
+        } catch (error) {
+            clearInterval(interval);
+            setIsAnalyzing(false);
+            alert('OCR 오류: ' + error.message);
+        }
+    };
+
+    // 🆕 구조화 함수
+    const structureData = async (text) => {
+        try {
+            const res = await fetch('http://localhost:3001/api/ocr/structure', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ extractedText: text })
+            });
+            if (!res.ok) throw new Error('구조화 실패');
+            const data = await res.json();
+            setStructuredData(data.structuredData);
+            setCurrentStep('structured');
+            setIsAnalyzing(false);
+        } catch (error) {
+            console.error('구조화 오류:', error);
+            // 구조화 실패 시 원본 텍스트로 review 단계로 이동
+            alert('구조화 중 오류가 발생했습니다. 원본 텍스트로 진행합니다.');
+            setCurrentStep('review');
+            setIsAnalyzing(false);
+        }
+    };
+
+    const runFinalAnalysis = async () => {
+        // 구조화된 데이터 또는 원본 텍스트 사용
+        const dataToAnalyze = structuredData || extractedText;
+        if (!dataToAnalyze || dataToAnalyze.trim().length < 10) {
+            alert('내용이 너무 짧습니다. 최소 10자 이상 입력해주세요.');
+            return;
+        }
+        setIsAnalyzing(true); setProgress(0);
+        const interval = setInterval(() => { setProgress(prev => Math.min(prev + 5, 90)); }, 400);
+        try {
+            const res = await fetch('http://localhost:3001/api/analyze/contract', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ workerType, companySize, manualText: dataToAnalyze, serviceType: selectedService })
+            });
+            if (!res.ok) { throw new Error('분석 서버 응답 오류'); }
+            const data = await res.json();
+            clearInterval(interval); setProgress(100); setResult(data); setCurrentStep('result'); setIsAnalyzing(false);
+        } catch (error) { clearInterval(interval); setIsAnalyzing(false); alert('분석 오류: ' + error.message); }
+    };
+
+    const handleAnalysisStart = (service) => {
+        setSelectedService(service);
+        setFiles([]);
+        if (previewUrls.length > 0) {
+            previewUrls.forEach(url => URL.revokeObjectURL(url));
+        }
+        setPreviewUrls([]);
+        setResult(null);
+        setProgress(0);
+        setExtractedText("");
+        setStructuredData(""); // 구조화 데이터 초기화
+        setCurrentStep('upload');
+        setGeneratedContract(null);
+    };
+
+    const generateContract = async () => {
+        setIsGenerating(true);
+        try {
+            const res = await fetch('http://localhost:3001/api/generate/contract', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    analysisResult: result,
+                    originalText: extractedText,
+                    workerType,
+                    companySize
+                })
+            });
+            if (!res.ok) throw new Error('계약서 생성 오류');
+            const data = await res.json();
+            setGeneratedContract(data.contractText);
+            setCurrentStep('contract');
+        } catch (error) {
+            alert('계약서 생성 실패: ' + error.message);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const renderLawBadges = (lawString) => {
+        if (!lawString) return null;
+        const laws = lawString.split(/[,;]+/).map(l => l.trim()).filter(l => l && l.length > 2);
+        return (
+            <div className="law-badge-container">
+                {laws.map((law, idx) => (
+                    <a key={idx} href={`https://www.law.go.kr/LSW/lsSc.do?menuId=1&query=${encodeURIComponent(law)}`} target="_blank" rel="noopener noreferrer" className="law-badge">
+                        ⚖️ {law} <ExternalLink size={12} />
+                    </a>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-50">
+            <nav className="header-nav glass">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldCheck className="text-primary" size={28} />
+                    <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>노동법 자율점검 AI</span>
+                </div>
+                <div className="nav-user"><Search size={20} color="var(--text-muted)" /><div style={{ width: 32, height: 32, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: '0.8rem', fontWeight: 600 }}>U</span></div></div>
+            </nav>
+
+            <main style={{ paddingBottom: '5rem' }}>
+                <section className="hero-section">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                        <h1 className="hero-title">AI가 지키는<br />당신의 노동 권리</h1>
+                        <p className="text-muted" style={{ fontSize: '1.1rem' }}>복잡한 계약서, 클릭 한 번으로 법률 리스크를 진단하세요.</p>
+                    </motion.div>
+                </section>
+
+                <div className="bento-grid">
+                    <motion.div className="bento-item glass" whileHover={{ y: -8, scale: 1.02 }} onClick={() => handleAnalysisStart('contract')}>
+                        <div className="bento-char-box">
+                            <motion.img
+                                layoutId="char-img-contract"
+                                src="/contract_char.png"
+                                alt="근로계약서 캐릭터"
+                                className="bento-char-img"
+                            />
+                        </div>
+                        <div className="bento-content">
+                            <div className="bento-header">
+                                <div className="bento-icon-box"><FileText size={20} /></div>
+                                <ArrowRight color="var(--text-muted)" size={18} />
+                            </div>
+                            <h3>근로계약서</h3>
+                            <p className="text-muted">법적 위반 조항 감지</p>
+                            <div className="status-badge status-appropriate">#2단계검증</div>
+                        </div>
+                    </motion.div>
+
+                    <motion.div className="bento-item glass" whileHover={{ y: -8, scale: 1.02 }} onClick={() => handleAnalysisStart('rule')}>
+                        <div className="bento-char-box">
+                            <motion.img
+                                layoutId="char-img-rule"
+                                src="/rule_char.png"
+                                alt="취업규칙 캐릭터"
+                                className="bento-char-img"
+                            />
+                        </div>
+                        <div className="bento-content">
+                            <div className="bento-header">
+                                <div className="bento-icon-box"><Scale size={20} /></div>
+                                <ArrowRight color="var(--text-muted)" size={18} />
+                            </div>
+                            <h3>취업규칙</h3>
+                            <p className="text-muted">불리한 조항 분석</p>
+                            <div className="status-badge status-warning">#표준안비교</div>
+                        </div>
+                    </motion.div>
+
+                    <motion.div className="bento-item glass" whileHover={{ y: -8, scale: 1.02 }} onClick={() => handleAnalysisStart('salary')}>
+                        <div className="bento-char-box">
+                            <motion.img
+                                layoutId="char-img-salary"
+                                src="/salary_char.png"
+                                alt="임금명세서 캐릭터"
+                                className="bento-char-img"
+                            />
+                        </div>
+                        <div className="bento-content">
+                            <div className="bento-header">
+                                <div className="bento-icon-box"><SlidersHorizontal size={20} /></div>
+                                <ArrowRight color="var(--text-muted)" size={18} />
+                            </div>
+                            <h3>임금명세서</h3>
+                            <p className="text-muted">오지급 수당 자동 계산</p>
+                            <div className="status-badge status-violation">#최저임금검증</div>
+                        </div>
+                    </motion.div>
+                </div>
+            </main>
+
+            <AnimatePresence>
+                {selectedService && (
+                    <motion.div className={currentStep === 'result' ? "analysis-overlay" : "upload-modal-overlay"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <StepIndicator currentStep={currentStep} />
+
+                        {currentStep === 'upload' && (
+                            <motion.div className="upload-card" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", duration: 0.5 }}>
+                                <div style={{ position: 'relative' }}>
+                                    <button onClick={() => setSelectedService(null)} style={{ position: 'absolute', top: -10, right: -10, background: 'none', border: 'none', cursor: 'pointer', zIndex: 10 }}><XCircle color="var(--text-muted)" size={28} /></button>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                                    <div style={{ width: 48, height: 48, borderRadius: '12px', overflow: 'hidden', background: '#f1f5f9', border: '1px solid #e2e8f0' }}>
+                                        <img src={getCharImage(selectedService)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                    <div>
+                                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#1e293b' }}>
+                                            {selectedService === 'contract' ? '근로계약서 분석' : selectedService === 'rule' ? '취업규칙 정밀 점검' : '임금명세서 자동 검증'}
+                                        </h2>
+                                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>AI가 서류를 분석하여 법적 리스크를 진단해드립니다.</p>
+                                    </div>
+                                </div>
+
+                                {!isAnalyzing ? (
+                                    <>
+                                        <div style={{ background: '#f0f9ff', padding: '2rem', borderRadius: '16px', marginBottom: '2rem', textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', fontSize: '1.1rem', fontWeight: 700 }}>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '0.8rem' }}>
+                                                    <span>우리 사업장은</span>
+                                                    <div className="select-wrapper">
+                                                        <select value={companySize} onChange={(e) => setCompanySize(e.target.value)} className="select-custom">
+                                                            <option value="under5">상시 5인 미만</option><option value="5more">상시 5인 이상</option>
+                                                        </select>
+                                                        <ChevronDown size={20} className="select-icon" />
+                                                    </div>
+                                                    <span>규모이며,</span>
+                                                </div>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '0.8rem' }}>
+                                                    <span>저는</span>
+                                                    <div className="select-wrapper">
+                                                        <select value={workerType} onChange={(e) => setWorkerType(e.target.value)} className="select-custom">
+                                                            <option value="regular">일반(정규직)</option><option value="fixed-term">기간제</option><option value="part-time">알바(단시간)</option>
+                                                        </select>
+                                                        <ChevronDown size={20} className="select-icon" />
+                                                    </div>
+                                                    <span>근로자입니다.</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="dropzone">
+                                            <input type="file" id="fileInput" hidden accept="image/*" multiple onChange={handleFileChange} />
+                                            <label htmlFor="fileInput" style={{ cursor: 'pointer', display: 'block' }}>
+                                                <Upload size={40} style={{ margin: '0 auto 1rem', color: 'var(--primary)' }} />
+                                                <h3 style={{ marginBottom: '0.5rem' }}>{files.length > 0 ? `${files.length}개의 파일 선택됨` : '계약서 사진 업로드'}</h3>
+                                                <p className="text-muted">{files.length > 0 ? files.map(f => f.name).join(', ') : '클릭하여 파일을 선택하세요 (여러 장 가능)'}</p>
+                                            </label>
+                                        </div>
+                                        <button className="analyze-button" onClick={extractOCR} disabled={files.length === 0}>다음: 정보 확인하기</button>
+                                    </>
+                                ) : (
+                                    <div style={{ padding: '4rem 0' }}>
+                                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} style={{ margin: '0 auto 2rem', width: 64 }}><ShieldCheck size={64} color="var(--primary)" /></motion.div>
+                                        <h3>텍스트 추출 중... ({progress}%)</h3>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {
+                            currentStep === 'structured' && (
+                                <div className="split-container" style={{ maxWidth: '100%', width: '100%' }}>
+                                    <div className="document-viewer" style={{ flex: 1 }}>
+                                        <div style={{ position: 'sticky', top: '2rem', width: '100%' }}>
+                                            <h4 style={{ fontWeight: 800, color: '#64748b', marginBottom: '1rem' }}>업로드한 사진 ({previewUrls.length}장)</h4>
+                                            {previewUrls.length > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                    {previewUrls.map((url, idx) => (
+                                                        <img key={idx} src={url} alt={`Uploaded Contract ${idx + 1}`} className="document-image" style={{ width: '100%', borderRadius: '16px', border: '2px solid #e2e8f0' }} />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div style={{ padding: '3rem', background: '#f1f5f9', borderRadius: '16px', textAlign: 'center', color: '#94a3b8' }}>
+                                                    <FileText size={48} style={{ margin: '0 auto 1rem' }} />
+                                                    <p>이미지가 업로드되지 않았습니다</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="analysis-panel" style={{ flex: 1 }}>
+                                        <h2 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileText size={28} color="var(--primary)" /> AI 구조화 매핑 결과</h2>
+                                        <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)' }}>AI가 OCR 텍스트를 분석하여 항목별로 정리했습니다. 왼쪽 사진을 보며 잘못된 부분을 수정해주세요.</p>
+                                        <EditableStructureTable structuredData={structuredData} setStructuredData={setStructuredData} />
+                                        <div style={{ display: 'flex', gap: '1rem' }}>
+                                            <button onClick={() => setCurrentStep('upload')} style={{ flex: 1, padding: '1rem', borderRadius: '12px', border: '1px solid #cbd5e1', background: 'white', fontWeight: 700, cursor: 'pointer' }}>이전</button>
+                                            <button onClick={runFinalAnalysis} disabled={isAnalyzing} style={{ flex: 2, padding: '1rem', borderRadius: '12px', background: isAnalyzing ? '#94a3b8' : 'var(--primary)', color: 'white', border: 'none', fontWeight: 700, fontSize: '1.1rem', cursor: isAnalyzing ? 'not-allowed' : 'pointer' }}>
+                                                {isAnalyzing ? '분석 중...' : '최종 분석 시작'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        }
+
+                        {
+                            currentStep === 'review' && (
+                                <div className="split-container" style={{ maxWidth: '100%', width: '100%' }}>
+                                    <div className="document-viewer" style={{ flex: 1 }}>
+                                        <div style={{ position: 'sticky', top: '2rem', width: '100%' }}>
+                                            <h4 style={{ fontWeight: 800, color: '#64748b', marginBottom: '1rem' }}>업로드한 사진 ({previewUrls.length}장)</h4>
+                                            {previewUrls.length > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                    {previewUrls.map((url, idx) => (
+                                                        <img key={idx} src={url} alt={`Uploaded Contract ${idx + 1}`} className="document-image" style={{ width: '100%', borderRadius: '16px', border: '2px solid #e2e8f0' }} />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div style={{ padding: '3rem', background: '#f1f5f9', borderRadius: '16px', textAlign: 'center', color: '#94a3b8' }}>
+                                                    <FileText size={48} style={{ margin: '0 auto 1rem' }} />
+                                                    <p>이미지가 업로드되지 않았습니다</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="analysis-panel" style={{ flex: 1 }}>
+                                        <h2 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Edit3 size={28} color="var(--primary)" /> 추출 내용 확인 및 수정</h2>
+                                        <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)' }}>AI가 읽은 내용입니다. 왼쪽 사진을 보며 잘못된 부분을 직접 수정해주세요.</p>
+                                        <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '16px', border: '2px solid #e2e8f0', marginBottom: '2rem' }}>
+                                            <textarea
+                                                value={extractedText}
+                                                onChange={(e) => setExtractedText(e.target.value)}
+                                                style={{ width: '100%', height: '400px', padding: '1rem', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '1rem', lineHeight: '1.6', outline: 'none', fontFamily: 'inherit' }}
+                                                placeholder="여기에 계약서 내용을 작성하거나 수정하세요..."
+                                            />
+                                            <p style={{ marginTop: '0.8rem', fontSize: '0.85rem', color: '#64748b' }}>💡 왼쪽 사진과 비교하며 잘못 읽힌 숫자, 날짜 등을 직접 고치면 분석이 더 정확해집니다.</p>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '1rem' }}>
+                                            <button onClick={() => setCurrentStep('upload')} style={{ flex: 1, padding: '1rem', borderRadius: '12px', border: '1px solid #cbd5e1', background: 'white', fontWeight: 700, cursor: 'pointer' }}>이전</button>
+                                            <button onClick={runFinalAnalysis} disabled={isAnalyzing} style={{ flex: 2, padding: '1rem', borderRadius: '12px', background: isAnalyzing ? '#94a3b8' : 'var(--primary)', color: 'white', border: 'none', fontWeight: 700, fontSize: '1.1rem', cursor: isAnalyzing ? 'not-allowed' : 'pointer' }}>
+                                                {isAnalyzing ? '분석 중...' : '최종 분석 시작'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        }
+
+                        {
+                            currentStep === 'result' && result && (
+                                <div className="split-container">
+                                    <div className="document-viewer">
+                                        <div style={{ position: 'sticky', top: '2rem', width: '100%' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                                <h4 style={{ fontWeight: 800, color: '#64748b' }}>제출된 데이터 ({previewUrls.length}장)</h4>
+                                                <button onClick={() => { setResult(null); setSelectedService(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XCircle size={24} color="#94a3b8" /></button>
+                                            </div>
+                                            {previewUrls.length > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                    {previewUrls.map((url, idx) => (
+                                                        <img key={idx} src={url} alt="Original" className="document-image" style={{ width: '100%', borderRadius: '16px', border: '2px solid #e2e8f0' }} />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div style={{ whiteSpace: 'pre-wrap', padding: '1.5rem', background: 'white', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>{extractedText}</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="analysis-panel">
+                                        {isAnalyzing && (
+                                            <motion.div className="loading-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                                <div className="loading-content">
+                                                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} style={{ marginBottom: '1.5rem' }}>
+                                                        <ShieldCheck size={64} color="white" />
+                                                    </motion.div>
+                                                    <h3 style={{ color: 'white', fontSize: '1.5rem', marginBottom: '1rem' }}>전문 AI가 법령을 검토 중입니다</h3>
+                                                    <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '2rem' }}>사용자님의 소중한 권리를 위해 63개 노동 관련 법령과<br />최신 판례를 꼼꼼하게 대조하고 있습니다. 잠시만 기다려주세요.</p>
+                                                    <div className="progress-bar-container">
+                                                        <motion.div className="progress-bar-fill" initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
+                                                    </div>
+                                                    <p style={{ color: 'white', marginTop: '1rem' }}>진행률: {progress}%</p>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                        <div className={`risk-summary-card ${result.riskLevel === '상' || result.overallStatus === '위험' || result.overallStatus === '부적절' || result.overallStatus === '부적정' ? 'risk-high' : result.riskLevel === '중' || result.overallStatus === '보완필요' || result.overallStatus === '주의' ? 'risk-medium' : 'risk-low'}`}>
+                                            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                                                {result.overallStatus === '위험' || result.overallStatus === '부적절' ? <AlertCircle size={48} /> : <ShieldCheck size={48} />}
+                                                <div>
+                                                    <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>{result.overallStatus}</h2>
+                                                    <p style={{ fontSize: '1.1rem', fontWeight: 600, opacity: 0.9 }}>{result.overallOpinion}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="analysis-table-container">
+                                            <table className="analysis-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th style={{ width: '15%' }}>항목</th>
+                                                        <th style={{ width: '12%', textAlign: 'center' }}>판정</th>
+                                                        <th>진단 내용 및 대책</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {result.results?.map((item, idx) => (
+                                                        <tr key={idx}>
+                                                            <td style={{ fontWeight: 800 }}>
+                                                                {legalRequirements[item.항목] ? (
+                                                                    <Tooltip
+                                                                        content={legalRequirements[item.항목].requirement}
+                                                                        category={legalRequirements[item.항목].category}
+                                                                    >
+                                                                        {item.항목}
+                                                                    </Tooltip>
+                                                                ) : item.항목}
+                                                                <br /><span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>[{item.적용조건}]</span>
+                                                            </td>
+                                                            <td style={{ textAlign: 'center' }}><span className={`status-badge ${item.적절성 === '적절' ? 'status-appropriate' : item.적절성 === '부적절' ? 'status-violation' : 'status-warning'}`}>{item.적절성}</span></td>
+                                                            <td>
+                                                                <div style={{ fontWeight: 700, color: item.적절성 === '부적절' ? '#b91c1c' : '#1e293b', marginBottom: '0.5rem' }}>{item.판단이유}</div>
+                                                                <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '0.8rem' }}>• {item.발견내용}</div>
+                                                                {renderLawBadges(item.법적근거)}
+                                                                {item.개선권고 && <div style={{ marginTop: '0.8rem', padding: '1rem', background: '#f8fafc', borderRadius: '10px', borderLeft: '4px solid #3b82f6', fontSize: '0.9rem', fontWeight: 600 }}>💡 권고: {item.개선권고}</div>}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {result.finalRecommendations && (
+                                            <div className="recommendations-content">
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#92400e', fontSize: '1.4rem', fontWeight: 800, margin: 0 }}><Scale size={28} /> 종합 보완 가이드</h3>
+
+                                                </div>
+                                                <div style={{ fontSize: '1.05rem', fontWeight: 600, color: '#92400e', whiteSpace: 'pre-line' }}>{result.finalRecommendations}</div>
+                                            </div>
+                                        )}
+
+
+
+                                        <div style={{ marginTop: '3rem', textAlign: 'center', paddingBottom: '3rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                            {(result.overallStatus === '위험' || result.overallStatus === '부적절' || result.overallStatus === '보완필요' || result.overallStatus === '주의') && (
+                                                <button
+                                                    onClick={generateContract}
+                                                    disabled={isGenerating}
+                                                    style={{ padding: '1rem 3rem', borderRadius: '14px', background: isGenerating ? '#94a3b8' : 'var(--primary)', color: 'white', fontWeight: 800, border: 'none', cursor: isGenerating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                                >
+                                                    <FileText size={24} /> {isGenerating ? '계약서 생성 중...' : '근로계약서 생성하기'}
+                                                </button>
+                                            )}
+                                            <button onClick={() => { setSelectedService(null); setCurrentStep('upload'); setGeneratedContract(null); }} style={{ padding: '1rem 3rem', borderRadius: '14px', background: '#1e293b', color: 'white', fontWeight: 800, border: 'none', cursor: 'pointer' }}>처음으로</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        }
+
+                        {
+                            currentStep === 'contract' && generatedContract && (
+                                <motion.div className={currentStep === 'result' ? "analysis-overlay" : "upload-modal-overlay"} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                    <StepIndicator currentStep={currentStep} />
+
+                                    <div className="split-container" style={{ maxWidth: '100%', width: '100%', marginTop: '1rem' }}>
+                                        <div className="document-viewer" style={{ flex: 1 }}>
+                                            <div style={{ position: 'sticky', top: '2rem', width: '100%' }}>
+                                                <h4 style={{ fontWeight: 800, color: '#64748b', marginBottom: '1rem' }}>업로드한 원본 사진 ({previewUrls.length}장)</h4>
+                                                {previewUrls.length > 0 ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                        {previewUrls.map((url, idx) => (
+                                                            <img key={idx} src={url} alt={`Uploaded Contract ${idx + 1}`} className="document-image" style={{ width: '100%', borderRadius: '16px', border: '2px solid #e2e8f0' }} />
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ padding: '3rem', background: '#f1f5f9', borderRadius: '16px', textAlign: 'center', color: '#94a3b8' }}>
+                                                        <FileText size={48} style={{ margin: '0 auto 1rem' }} />
+                                                        <p>이미지가 업로드되지 않았습니다</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="analysis-panel" style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                                <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem', fontWeight: 800 }}><Edit3 size={28} color="var(--primary)" /> 표준근로계약서 작성</h2>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button
+                                                        onClick={() => {
+                                                            const printWindow = window.open('', '_blank');
+                                                            printWindow.document.write(`
+                                                              <html>
+                                                                <head>
+                                                                  <title>표준근로계약서</title>
+                                                                  <style>body { font-family: 'Malgun Gothic', sans-serif; padding: 40px; line-height: 1.8; white-space: pre-wrap; }</style>
+                                                                </head>
+                                                                <body>${generatedContract}</body>
+                                                              </html>
+                                                            `);
+                                                            printWindow.document.close();
+                                                            printWindow.print();
+                                                        }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#ef4444', color: 'white', padding: '0.6rem 1rem', borderRadius: '10px', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                                                    >
+                                                        <FileText size={16} /> PDF
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const blob = new Blob(['\ufeff', generatedContract], { type: 'application/msword' });
+                                                            const url = URL.createObjectURL(blob);
+                                                            const link = document.createElement('a');
+                                                            link.href = url;
+                                                            link.download = `표준근로계약서_${new Date().toISOString().slice(0, 10)}.doc`;
+                                                            link.click();
+                                                            URL.revokeObjectURL(url);
+                                                        }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#3b82f6', color: 'white', padding: '0.6rem 1rem', borderRadius: '10px', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                                                    >
+                                                        <FileText size={16} /> Word
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '16px', border: '2px solid #3b82f6' }}>
+                                                <textarea
+                                                    value={generatedContract}
+                                                    onChange={(e) => setGeneratedContract(e.target.value)}
+                                                    style={{ width: '100%', height: '600px', padding: '1.5rem', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '1rem', lineHeight: '1.8', outline: 'none', fontFamily: "'Malgun Gothic', sans-serif'", whiteSpace: 'pre-wrap' }}
+                                                    placeholder="계약서 내용이 여기에 표시됩니다..."
+                                                />
+                                            </div>
+
+                                            <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                                <button onClick={() => setCurrentStep('result')} style={{ padding: '1rem 3rem', borderRadius: '14px', background: 'white', border: '1px solid #cbd5e1', color: '#64748b', fontWeight: 700, cursor: 'pointer' }}>이전 단계</button>
+                                                <button onClick={() => window.location.reload()} style={{ padding: '1rem 3rem', borderRadius: '14px', background: '#1e293b', color: 'white', fontWeight: 800, border: 'none', cursor: 'pointer' }}>처음으로</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )
+                        }
+                    </motion.div >
+                )}
+            </AnimatePresence >
+        </div >
+    );
+};
+
+export default App;
