@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiClient } from '../../utils/apiClient';
 import {
     Save, RefreshCw, AlertTriangle, CheckCircle, ChevronLeft,
     FileText, Upload, Trash2, Database, Settings,
@@ -35,8 +36,8 @@ const PromptManager = ({ onBack }) => {
         setIsLoading(true);
         try {
             const [promptsRes, filesRes] = await Promise.all([
-                fetch('http://localhost:3001/api/admin/prompts'),
-                fetch('http://localhost:3001/api/admin/files')
+                apiClient.get('/api/admin/prompts'),
+                apiClient.get('/api/admin/files')
             ]);
 
             if (promptsRes.ok) {
@@ -58,11 +59,7 @@ const PromptManager = ({ onBack }) => {
         setIsSaving(true);
         const newPrompts = { ...prompts, [key]: updatedValue };
         try {
-            const res = await fetch('http://localhost:3001/api/admin/prompts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newPrompts)
-            });
+            const res = await apiClient.post('/api/admin/prompts', newPrompts);
             if (res.ok) {
                 setPrompts(newPrompts);
                 setMessage({ type: 'success', text: '프롬프트가 저장되었습니다.' });
@@ -86,10 +83,7 @@ const PromptManager = ({ onBack }) => {
 
         setUploadingFile(true);
         try {
-            const res = await fetch('http://localhost:3001/api/admin/files/upload', {
-                method: 'POST',
-                body: formData
-            });
+            const res = await apiClient.postForm('/api/admin/files/upload', formData);
             if (res.ok) {
                 setMessage({ type: 'success', text: `${file.name} 업로드 완료` });
                 fetchData();
@@ -107,9 +101,7 @@ const PromptManager = ({ onBack }) => {
     const handleDeleteFile = async (filename) => {
         if (!confirm(`${filename} 파일을 삭제하시겠습니까?`)) return;
         try {
-            const res = await fetch(`http://localhost:3001/api/admin/files/${filename}`, {
-                method: 'DELETE'
-            });
+            const res = await apiClient.delete(`/api/admin/files/${filename}`);
             if (res.ok) {
                 setMessage({ type: 'success', text: '파일이 삭제되었습니다.' });
                 fetchData();
@@ -378,7 +370,7 @@ const PromptManager = ({ onBack }) => {
 
             <style>{`
                 .admin-layout { display: flex; width: 100vw; height: 100vh; background: #f8fafc; color: #1e293b; overflow: hidden; font-family: 'Pretendard', sans-serif; }
-                
+
                 /* Sidebar Styles */
                 .admin-sidebar { width: 280px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.3s; }
                 .sidebar-brand { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid #f1f5f9; }
@@ -386,14 +378,14 @@ const PromptManager = ({ onBack }) => {
                 .brand-logo img { width: 20px; }
                 .brand-text h3 { margin: 0; font-size: 1rem; font-weight: 800; color: #0f172a; }
                 .brand-text span { font-size: 0.75rem; color: #64748b; font-weight: 600; }
-                
+
                 .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
                 .nav-group { margin-bottom: 0.5rem; }
                 .group-label { padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; font-weight: 700; color: #475569; cursor: pointer; transition: background 0.2s; }
                 .group-label:hover { background: #f8fafc; }
                 .nav-group.active .group-label { color: #3b82f6; }
                 .group-label svg:last-child { margin-left: auto; color: #94a3b8; }
-                
+
                 .group-items { padding: 0.25rem 0.5rem 0.25rem 2.5rem; }
                 .nav-item { display: flex; align-items: center; gap: 0.75rem; width: 100%; text-align: left; padding: 0.6rem 1rem; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #64748b; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
                 .nav-item .dot { width: 4px; height: 4px; background: #cbd5e1; border-radius: 50%; }
@@ -411,7 +403,7 @@ const PromptManager = ({ onBack }) => {
 
                 .content-body { flex: 1; padding: 2.5rem 3rem; overflow-y: auto; }
                 .page-title { font-size: 1.75rem; font-weight: 900; color: #0f172a; margin-bottom: 2rem; }
-                
+
                 .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
                 .table-filters { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
                 .search-box { position: relative; flex: 1; max-width: 300px; display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0 1rem; }
@@ -425,7 +417,7 @@ const PromptManager = ({ onBack }) => {
                 .admin-table td { padding: 1.25rem 1.5rem; font-size: 0.9rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
                 .admin-table tr:hover { background: #fcfdfe; }
                 .text-ellipsis { max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-                
+
                 .btn-detail { padding: 0.4rem 1.25rem; background: #eff6ff; color: #3b82f6; border: 1px solid #dbeafe; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
                 .btn-detail:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
 
@@ -437,7 +429,7 @@ const PromptManager = ({ onBack }) => {
                 .modal-body { padding: 2rem; max-height: 70vh; overflow-y: auto; }
                 .modal-textarea { width: 100%; min-height: 350px; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; font-family: monospace; font-size: 0.95rem; line-height: 1.6; resize: none; margin-top: 0.5rem; }
                 .modal-footer { padding: 1.5rem 2rem; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 1rem; }
-                
+
                 .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
                 .param-item label { display: block; font-size: 0.85rem; font-weight: 800; color: #475569; margin-bottom: 0.5rem; }
                 .param-item input[type="text"] { width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 600; }

@@ -79,15 +79,4 @@ router.post('/generate/contract', asyncHandler(async (req, res) => {
   res.json({ success: true, contractText });
 }));
 
-// 랜덤 팁 제공
-router.get('/tips/random', (req, res) => {
-  const tips = [
-    '💡 근로계약서는 근로 시작 전에 작성해야 해요',
-    '💡 2026년 최저시급은 10,320원이에요',
-    '💡 연차휴가는 1년간 80% 이상 출근 시 15일이 발생합니다'
-  ];
-  const randomTip = tips[Math.floor(Math.random() * tips.length)];
-  res.json({ tip: randomTip });
-});
-
 export default router;

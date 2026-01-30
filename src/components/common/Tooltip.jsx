@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CATEGORY_COLORS } from './constants';
+import { CATEGORY_COLORS } from '../../constants';
 
 const Tooltip = ({ content, children, category }) => {
     const [isVisible, setIsVisible] = useState(false);

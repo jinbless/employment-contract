@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import PromptManager from './PromptManager';
+import PromptManager from './components/admin/PromptManager';
 import { exportToWord, exportToPDF } from './utils/pdfExport'; // exportToPDF is used for Contract PDF
 import { contractApi } from './api/contractApi';
 import { apiClient } from './utils/apiClient'; // Used for initial connection check only
