@@ -58,7 +58,7 @@ function App() {
     // --- Effects ---
     useEffect(() => {
         // Quick connection check
-        apiClient.get('/api/tips/random')
+        apiClient.get('/tips/random')
             .then(() => setIsConnected(true))
             .catch(() => setIsConnected(false));
     }, []);

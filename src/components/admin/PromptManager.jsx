@@ -36,8 +36,8 @@ const PromptManager = ({ onBack }) => {
         setIsLoading(true);
         try {
             const [promptsRes, filesRes] = await Promise.all([
-                apiClient.get('/api/admin/prompts'),
-                apiClient.get('/api/admin/files')
+                apiClient.get('/admin/prompts'),
+                apiClient.get('/admin/files')
             ]);
 
             if (promptsRes.ok) {
@@ -59,7 +59,7 @@ const PromptManager = ({ onBack }) => {
         setIsSaving(true);
         const newPrompts = { ...prompts, [key]: updatedValue };
         try {
-            const res = await apiClient.post('/api/admin/prompts', newPrompts);
+            const res = await apiClient.post('/admin/prompts', newPrompts);
             if (res.ok) {
                 setPrompts(newPrompts);
                 setMessage({ type: 'success', text: '프롬프트가 저장되었습니다.' });
@@ -83,7 +83,7 @@ const PromptManager = ({ onBack }) => {
 
         setUploadingFile(true);
         try {
-            const res = await apiClient.postForm('/api/admin/files/upload', formData);
+            const res = await apiClient.postForm('/admin/files/upload', formData);
             if (res.ok) {
                 setMessage({ type: 'success', text: `${file.name} 업로드 완료` });
                 fetchData();

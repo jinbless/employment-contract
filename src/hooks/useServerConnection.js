@@ -12,7 +12,7 @@ export function useServerConnection() {
         const checkConnection = async () => {
             setIsChecking(true);
             try {
-                const response = await apiClient.get('/api/tips/random');
+                const response = await apiClient.get('/tips/random');
                 setIsConnected(response.ok);
             } catch (error) {
                 setIsConnected(false);
@@ -27,7 +27,7 @@ export function useServerConnection() {
     const recheckConnection = async () => {
         setIsChecking(true);
         try {
-            const response = await apiClient.get('/api/tips/random');
+            const response = await apiClient.get('/tips/random');
             setIsConnected(response.ok);
         } catch (error) {
             setIsConnected(false);

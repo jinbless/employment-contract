@@ -7,7 +7,7 @@ export const contractApi = {
      * @returns {Promise<Object>} - OCR result
      */
     extractOCR: async (formData) => {
-        const res = await apiClient.postForm('/api/ocr/extract', formData);
+        const res = await apiClient.postForm('/ocr/extract', formData);
         return handleApiResponse(res, 'OCR Extraction');
     },
 
@@ -17,7 +17,7 @@ export const contractApi = {
      * @returns {Promise<Object>} - Structured data
      */
     structureContract: async (extractedText) => {
-        const res = await apiClient.post('/api/ocr/structure', { extractedText });
+        const res = await apiClient.post('/ocr/structure', { extractedText });
         return handleApiResponse(res, 'Structuring Data');
     },
 
@@ -28,7 +28,7 @@ export const contractApi = {
      * @returns {Promise<Object>} - Analysis result
      */
     analyzeContract: async (structuredData, userContext) => {
-        const res = await apiClient.post('/api/analyze', {
+        const res = await apiClient.post('/analyze', {
             structuredData,
             userContext
         });
@@ -41,7 +41,7 @@ export const contractApi = {
      * @returns {Promise<Object>} - Generated contract text
      */
     generateContract: async (analysisResult) => {
-        const res = await apiClient.post('/api/generate/contract', { analysisResult });
+        const res = await apiClient.post('/generate/contract', { analysisResult });
         return handleApiResponse(res, 'Contract Generation');
     }
 };
