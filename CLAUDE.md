@@ -10,8 +10,8 @@ AI 노동법 자율점검 서비스 (AI Labor Law Self-Check Service) - A web ap
 
 ```bash
 # Frontend (React + Vite) - from project root
-npm run dev      # Start dev server at http://localhost:5173
-npm run build    # Production build
+npm run dev      # Start dev server at http://localhost:5173 (proxies /api to backend)
+npm run build    # Production build to dist/
 npm run lint     # ESLint check
 
 # Backend (Node.js + Express) - from server/ directory
@@ -20,7 +20,7 @@ npm start        # Start server on port 3001
 npm run dev      # Start with file watching (--watch flag)
 ```
 
-Run both servers simultaneously for full development.
+Run both servers simultaneously for full development. Frontend proxies `/api` requests to the backend.
 
 ## Architecture
 
@@ -54,12 +54,12 @@ The server follows a modular architecture:
 | `GET /api/tips/random` | tips.js | Get random labor law tips |
 
 ### RAG System (Legal Reference Data)
-**Excel files (`*.xlsx`)** in project root contain 30+ Korean labor law reference documents organized by category:
+**Excel files** in `data/legal/` contain 30+ Korean labor law reference documents organized by category:
 - Files indexed by category prefix (e.g., `임금_data_*.xlsx` → category "임금")
 - `dataService.getDetailedLegalContent()` extracts relevant legal content by topic ID
 - Aliases defined for related categories (임금대장 → 임금명세서, 휴일대체 → 휴일)
 
-**CSV files** in `server/` define contract items filtered by business size/worker type:
+**CSV files** in `data/templates/` define contract items filtered by business size/worker type:
 - `근로계약서_updated.csv` - Employment contract items
 - `임금명세서_updated.csv` - Wage slip items
 - `취업규칙_updated.csv` - Employment rules items
@@ -94,6 +94,19 @@ Backend requires `.env` in `server/` directory:
 ```
 OPENAI_API_KEY=your_key_here
 ```
+
+## Docker Deployment
+
+```bash
+# Build and run with docker-compose
+docker-compose up -d --build
+
+# Or build manually
+docker build -t employment-contract .
+docker run -p 3002:3002 -v ./server/.env:/app/server/.env:ro employment-contract
+```
+
+Production runs on port 3002 and serves the built frontend at `/contract/`.
 
 ## Design System
 

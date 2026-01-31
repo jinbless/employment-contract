@@ -31,21 +31,36 @@ function getPromptConfig(promptKey) {
  */
 export async function extractTextFromImage(base64Image) {
   const config = getPromptConfig('ocrExtraction');
+  console.log('🔍 OCR 추출 시작...');
+  console.log('  - 모델:', config.model || 'gpt-5.2');
+  console.log('  - 이미지 크기:', Math.round(base64Image.length / 1024), 'KB');
 
-  const completion = await openaiInstance.chat.completions.create({
-    model: config.model || 'gpt-5.2',
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'text', text: config.systemPrompt || '이미지에서 텍스트를 추출하세요.' },
-        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
-      ]
-    }],
-    max_completion_tokens: 2000,
-    temperature: config.temperature ?? 0
-  });
+  try {
+    const completion = await openaiInstance.chat.completions.create({
+      model: config.model || 'gpt-5.2',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: config.systemPrompt || '이미지에서 텍스트를 추출하세요.' },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+        ]
+      }],
+      max_completion_tokens: 2000,
+      temperature: config.temperature ?? 0
+    });
 
-  return completion.choices[0].message.content;
+    console.log('✅ OCR API 응답 성공');
+    return completion.choices[0].message.content;
+  } catch (error) {
+    console.error('❌ OCR API 에러:', error.message);
+    console.error('  - 에러 타입:', error.constructor.name);
+    console.error('  - 상태 코드:', error.status || 'N/A');
+    console.error('  - 에러 코드:', error.code || 'N/A');
+    if (error.error) {
+      console.error('  - 상세:', JSON.stringify(error.error, null, 2));
+    }
+    throw error;
+  }
 }
 
 /**
@@ -53,18 +68,33 @@ export async function extractTextFromImage(base64Image) {
  */
 export async function structureText(extractedText) {
   const config = getPromptConfig('structure');
+  console.log('🔍 텍스트 구조화 시작...');
+  console.log('  - 모델:', config.model || 'gpt-5.2');
+  console.log('  - 입력 텍스트 길이:', extractedText?.length || 0, '자');
 
-  const completion = await openaiInstance.chat.completions.create({
-    model: config.model || 'gpt-5.2',
-    messages: [
-      { role: 'system', content: config.systemPrompt || '텍스트를 JSON으로 구조화하세요.' },
-      { role: 'user', content: `다음 OCR 텍스트를 위 양식에 맞춰 구조화해주세요:\n\n${extractedText}` }
-    ],
-    max_completion_tokens: 3000,
-    temperature: config.temperature ?? 0
-  });
+  try {
+    const completion = await openaiInstance.chat.completions.create({
+      model: config.model || 'gpt-5.2',
+      messages: [
+        { role: 'system', content: config.systemPrompt || '텍스트를 JSON으로 구조화하세요.' },
+        { role: 'user', content: `다음 OCR 텍스트를 위 양식에 맞춰 구조화해주세요:\n\n${extractedText}` }
+      ],
+      max_completion_tokens: 3000,
+      temperature: config.temperature ?? 0
+    });
 
-  return cleanJsonResponse(completion.choices[0].message.content);
+    console.log('✅ 구조화 API 응답 성공');
+    return cleanJsonResponse(completion.choices[0].message.content);
+  } catch (error) {
+    console.error('❌ 구조화 API 에러:', error.message);
+    console.error('  - 에러 타입:', error.constructor.name);
+    console.error('  - 상태 코드:', error.status || 'N/A');
+    console.error('  - 에러 코드:', error.code || 'N/A');
+    if (error.error) {
+      console.error('  - 상세:', JSON.stringify(error.error, null, 2));
+    }
+    throw error;
+  }
 }
 
 /**
