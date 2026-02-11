@@ -11,14 +11,14 @@ const Step4Generation = ({
     contractRef
 }) => {
     return (
-        <div style={{ padding: '0 48px', height: 'calc(100vh - 140px)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+        <div className="step4-container">
             {/* Left: Original Contract (Read-only) */}
-            <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ padding: '20px', borderBottom: '1px solid #eee', background: '#f8fafc', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="step4-panel">
+                <div className="step4-panel-header" style={{ background: '#f8fafc' }}>
                     <FileText size={20} color="#64748b" />
                     <span style={{ fontSize: '16px', fontWeight: 700, color: '#334155' }}>원본 계약서</span>
                 </div>
-                <div style={{ flex: 1, overflow: 'auto', padding: '24px', background: '#f1f5f9' }}>
+                <div className="step4-panel-body" style={{ background: '#f1f5f9' }}>
                     {previewUrls.length > 0 ? (
                         <img src={previewUrls[0]} alt="Original Contract" style={{ width: '100%', height: 'auto', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
                     ) : (
@@ -30,13 +30,13 @@ const Step4Generation = ({
             </div>
 
             {/* Right: Contract Editor */}
-            <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ padding: '20px', borderBottom: '1px solid #eee', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="step4-panel">
+                <div className="step4-editor-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <CheckCircle2 size={24} color="#10b981" />
                         <span style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b' }}>수정된 표준 근로계약서</span>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div className="step4-btn-group">
                         <button
                             onClick={onDownloadWord}
                             style={{
@@ -80,20 +80,9 @@ const Step4Generation = ({
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff' }}>
                     <textarea
                         ref={contractRef}
+                        className="step4-editor"
                         value={generatedContract}
                         onChange={(e) => onContractChange(e.target.value)}
-                        style={{
-                            flex: 1,
-                            width: '100%',
-                            padding: '32px',
-                            border: 'none',
-                            fontSize: '15px',
-                            lineHeight: '1.8',
-                            color: '#334155',
-                            resize: 'none',
-                            outline: 'none',
-                            fontFamily: '"Malgun Gothic", sans-serif'
-                        }}
                     />
                 </div>
             </div>

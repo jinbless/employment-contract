@@ -42,6 +42,7 @@ function App() {
     const [isAdminMode, setIsAdminMode] = useState(false);
     const [generatedContract, setGeneratedContract] = useState('');
     const [step, setStep] = useState(1); // 1: Upload, 2: Structure, 3: Analysis, 4: Contract Generation
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // User Context
     const [userContext, setUserContext] = useState({
@@ -274,17 +275,21 @@ function App() {
     // 2. Main Layout
     return (
         <div className="app-container">
+            <div className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} onClick={() => setSidebarOpen(false)} />
             <Sidebar
                 selectedService={selectedService}
                 onSelectService={handleAnalysisStart}
                 isAdminMode={isAdminMode}
                 onToggleAdmin={() => setIsAdminMode(!isAdminMode)}
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
             />
 
             <div className="main-content">
                 <TopHeader
                     selectedService={selectedService}
                     isConnected={isConnected}
+                    onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
                 />
 
                 {/* Show Step Progress unless in Admin Mode */}
@@ -336,15 +341,7 @@ function App() {
                                     </div>
 
                                     {/* Right Panel: Working Area */}
-                                    <div className="analysis-panel" style={{
-                                        position: 'relative',
-                                        height: '100%', // Take full available height
-                                        maxHeight: isExpanded ? 'none' : 'calc(100vh - 140px)', // Increased default height
-                                        overflowY: isExpanded ? 'visible' : 'auto', // Allow scrolling if needed inside, or hidden if we want strict Show More
-                                        // User asked for "Show More" behavior, so overflow should be hidden when collapsed
-                                        overflow: isExpanded ? 'visible' : 'hidden',
-                                        transition: 'max-height 0.3s ease-in-out'
-                                    }}>
+                                    <div className={`analysis-panel ${isExpanded ? 'expanded' : ''}`}>
                                         <div className="panel-header">
                                             <div className="panel-title">분석 결과</div>
                                         </div>

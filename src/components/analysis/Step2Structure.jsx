@@ -10,8 +10,8 @@ const Step2Structure = ({
     onReUpload
 }) => {
     return (
-        <div style={{ padding: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px', color: '#003366' }}>📋 추출된 정보를 확인해주세요</h3>
+        <div className="step2-container">
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px', color: '#003366' }}>추출된 정보를 확인해주세요</h3>
             <p style={{ color: '#666', marginBottom: '16px', fontSize: '14px' }}>아래 정보가 정확한지 확인하고, 틀린 부분은 직접 수정할 수 있습니다.</p>
 
             {/* 사용자 컨텍스트 선택 UI */}
@@ -33,7 +33,7 @@ const Step2Structure = ({
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#333', marginBottom: '8px' }}>
                         우리 사업장은
                     </label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div className="step2-size-options">
                         {['5인이상', '5인미만'].map(size => (
                             <label key={size} style={{
                                 flex: 1,
@@ -67,7 +67,7 @@ const Step2Structure = ({
                         저는 (복수 선택 가능)
                     </label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '6px', flex: 1 }}>
+                        <div className="step2-worker-grid">
                             {[
                                 { value: '정규직', label: '정규직' },
                                 { value: '기간제', label: '기간제 근로자' },
@@ -110,7 +110,7 @@ const Step2Structure = ({
                 </div>
             </div>
 
-            <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '12px', background: '#fafafa' }}>
+            <div className="step2-data-editor">
                 {Object.entries(structuredData).map(([category, items]) => (
                     <div key={category} style={{ marginBottom: '16px' }}>
                         <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#003366', marginBottom: '8px', borderBottom: '2px solid #003366', paddingBottom: '4px' }}>{category}</h4>
@@ -197,7 +197,7 @@ const Step2Structure = ({
                 ))}
             </div>
 
-            <div style={{ marginTop: '16px', display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingBottom: '16px' }}>
+            <div className="step2-actions">
                 <button
                     onClick={onReUpload}
                     style={{ padding: '10px 16px', background: '#f0f0f0', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}
@@ -208,7 +208,7 @@ const Step2Structure = ({
                     onClick={onConfirm}
                     style={{ padding: '10px 20px', background: '#003366', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}
                 >
-                    ✅ 정보 확인 완료, 분석 시작
+                    정보 확인 완료, 분석 시작
                 </button>
             </div>
         </div>

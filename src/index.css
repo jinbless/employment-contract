@@ -50,6 +50,7 @@ body {
   display: flex;
   flex-direction: column;
   z-index: 1000;
+  transition: transform 0.3s ease;
 }
 
 .sidebar-header {
@@ -319,6 +320,18 @@ body {
   flex-direction: column;
 }
 
+.analysis-panel {
+  position: relative;
+  max-height: calc(100vh - 140px);
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.analysis-panel.expanded {
+  max-height: none;
+  overflow: visible;
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;
@@ -446,32 +459,606 @@ body {
   }
 }
 
-/* Responsive */
+/* ==================== */
+/* Sidebar Mobile       */
+/* ==================== */
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
+.sidebar-close {
+  display: none;
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--color-navy-deep);
+  align-items: center;
+}
+
+/* ==================== */
+/* Step 2: Structure    */
+/* ==================== */
+
+.step2-container {
+  padding: 16px;
+}
+
+.step2-size-options {
+  display: flex;
+  gap: 8px;
+}
+
+.step2-worker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  flex: 1;
+}
+
+.step2-data-editor {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.step2-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-bottom: 16px;
+}
+
+/* ==================== */
+/* Step 3: Analysis     */
+/* ==================== */
+
+.step3-summary-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.step3-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.step3-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.step3-stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.step3-action-footer {
+  margin-top: 40px;
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.step3-generate-btn {
+  background: #003366;
+  color: white;
+  border: none;
+  padding: 16px 40px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.step3-generate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 51, 102, 0.4);
+}
+
+/* ==================== */
+/* Step 4: Generation   */
+/* ==================== */
+
+.step4-container {
+  padding: 0 48px;
+  height: calc(100vh - 140px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.step4-panel {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.step4-panel-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step4-panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+}
+
+.step4-editor-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.step4-btn-group {
+  display: flex;
+  gap: 12px;
+}
+
+.step4-editor {
+  flex: 1;
+  width: 100%;
+  padding: 32px;
+  border: none;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #334155;
+  resize: none;
+  outline: none;
+  font-family: 'Malgun Gothic', sans-serif;
+}
+
+/* ==================== */
+/* Landing Page         */
+/* ==================== */
+
+.landing-page {
+  min-height: 100vh;
+  background: white;
+}
+
+.landing-header {
+  background: #003366;
+  color: white;
+  padding: 16px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.landing-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.landing-nav {
+  display: flex;
+  gap: 32px;
+}
+
+.landing-nav-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.landing-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.landing-mobile-nav {
+  display: none;
+  background: #003366;
+  padding: 0 48px 16px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landing-mobile-nav.open {
+  display: flex;
+}
+
+.landing-hero {
+  padding: 80px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.landing-hero-title {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #001F54;
+  margin-bottom: 24px;
+}
+
+.landing-upload-zone {
+  background: white;
+  border-radius: 16px;
+  padding: 48px;
+  border: 2px dashed #0056B3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 450px;
+}
+
+.landing-features {
+  background: #f8f9fa;
+  padding: 80px 48px;
+}
+
+.landing-features-title {
+  text-align: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: #001F54;
+  margin-bottom: 64px;
+}
+
+.landing-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.landing-feature-card {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.landing-footer {
+  background: #001F54;
+  color: white;
+  padding: 48px 48px 32px;
+}
+
+.landing-footer-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+}
+
+.landing-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 32px;
+  padding-top: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ==================== */
+/* Responsive Design    */
+/* ==================== */
+
 @media (max-width: 1024px) {
   .split-view {
     grid-template-columns: 1fr;
   }
 
-  /* On mobile/tablet, let the panel expand naturally or keep existing logic */
-  /* If we want to avoid nested scrolling on mobile, we strictly allow the panel to be tall */
   .analysis-panel {
-    /* override inline styles if needed, but 'Show More' logic might be preferred. 
-       If we want to support 'Show More' on mobile too, we should NOT force height: auto. 
-       However, typically split views become stacked. */
     min-height: 500px;
+  }
+
+  .step4-container {
+    grid-template-columns: 1fr;
+    height: auto;
+    padding: 0 24px;
+  }
+
+  .landing-hero {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 48px 32px;
+  }
+
+  .landing-upload-zone {
+    min-height: 300px;
+    padding: 32px;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .landing-footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
   }
 }
 
 @media (max-width: 768px) {
+  /* Sidebar */
   .sidebar {
     transform: translateX(-100%);
   }
 
-  .main-content {
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-close {
+    display: block;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  .app-container:has(.sidebar) .main-content {
     margin-left: 0;
   }
 
+  .hamburger-btn {
+    display: flex;
+  }
+
+  /* Top bar */
+  .top-bar {
+    padding: 12px 16px;
+  }
+
+  .top-bar-title {
+    font-size: 16px;
+  }
+
+  /* Step progress */
+  .step-progress {
+    padding: 16px;
+  }
+
+  .step-label {
+    display: none;
+  }
+
+  .step-arrow {
+    margin: 0 8px;
+  }
+
+  /* Content */
   .content-area {
     padding: 16px;
+  }
+
+  /* Step 2 */
+  .step2-worker-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .step2-actions {
+    flex-wrap: wrap;
+  }
+
+  .step2-actions button {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  /* Step 3 */
+  .step3-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .step3-stat-number {
+    font-size: 22px;
+  }
+
+  .step3-summary-card {
+    padding: 16px;
+  }
+
+  .step3-summary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .step3-generate-btn {
+    padding: 14px 24px;
+    font-size: 16px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .step3-action-footer {
+    margin-top: 24px;
+  }
+
+  /* Step 4 */
+  .step4-container {
+    padding: 0 16px;
+    height: auto;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .step4-panel-header {
+    padding: 16px;
+  }
+
+  .step4-panel-body {
+    padding: 16px;
+  }
+
+  .step4-editor {
+    padding: 16px;
+    min-height: 400px;
+  }
+
+  .step4-editor-header {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    align-items: flex-start;
+  }
+
+  .step4-btn-group {
+    width: 100%;
+  }
+
+  .step4-btn-group button {
+    flex: 1;
+  }
+
+  /* Landing */
+  .landing-header {
+    padding: 12px 16px;
+  }
+
+  .landing-nav {
+    display: none;
+  }
+
+  .landing-hamburger {
+    display: block;
+  }
+
+  .landing-mobile-nav {
+    padding: 0 16px 16px;
+  }
+
+  .landing-hero {
+    padding: 40px 16px;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .landing-hero-title {
+    font-size: 28px;
+  }
+
+  .landing-upload-zone {
+    padding: 24px;
+    min-height: auto;
+  }
+
+  .landing-features {
+    padding: 40px 16px;
+  }
+
+  .landing-features-title {
+    font-size: 24px;
+    margin-bottom: 32px;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .landing-feature-card {
+    padding: 24px;
+  }
+
+  .landing-footer {
+    padding: 32px 16px 24px;
+  }
+
+  .landing-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  /* Upload section */
+  .upload-section {
+    padding: 24px;
+  }
+
+  .upload-title {
+    font-size: 16px;
+  }
+
+  /* Analysis panel mobile */
+  .analysis-panel {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .step2-size-options {
+    flex-direction: column;
+  }
+
+  .step2-worker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-hero-title {
+    font-size: 24px;
+  }
+
+  .step4-editor {
+    font-size: 13px;
+    padding: 12px;
   }
 }

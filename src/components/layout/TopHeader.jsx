@@ -1,5 +1,6 @@
+import { Menu } from 'lucide-react';
 
-const TopHeader = ({ selectedService, isConnected }) => {
+const TopHeader = ({ selectedService, isConnected, onToggleSidebar }) => {
     const getTitle = () => {
         if (selectedService === 'contract') return '근로계약서 분석';
         if (selectedService === 'salary') return '임금명세서 분석';
@@ -9,8 +10,13 @@ const TopHeader = ({ selectedService, isConnected }) => {
 
     return (
         <div className="top-bar">
-            <div className="top-bar-title">
-                {getTitle()}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button className="hamburger-btn" onClick={onToggleSidebar} aria-label="Open menu">
+                    <Menu size={24} />
+                </button>
+                <div className="top-bar-title">
+                    {getTitle()}
+                </div>
             </div>
             <div className="top-bar-actions">
                 <div className="server-status">

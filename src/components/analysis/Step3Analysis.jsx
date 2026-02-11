@@ -12,17 +12,9 @@ const Step3Analysis = ({
     return (
         <div ref={resultRef}>
             {/* 분석 요약 통계 */}
-            <div style={{
-                background: 'white',
-                border: '1px solid #e0e0e0',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '24px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                color: '#333'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#003366' }}>📊 분석 요약</h3>
+            <div className="step3-summary-card">
+                <div className="step3-summary-header">
+                    <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#003366' }}>분석 요약</h3>
                     <button
                         onClick={onDownloadPDF}
                         style={{
@@ -74,27 +66,27 @@ const Step3Analysis = ({
                 </div>
 
                 {/* 통계 */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                <div className="step3-stats-grid">
                     <div style={{ background: '#f8f9fa', border: '1px solid #eee', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '28px', fontWeight: 700, marginBottom: '4px', color: '#333' }}>
+                        <div className="step3-stat-number" style={{ color: '#333' }}>
                             {analysisResult.summary?.총항목 || analysisResult.results?.length || 0}
                         </div>
                         <div style={{ fontSize: '13px', color: '#666' }}>총 항목</div>
                     </div>
                     <div style={{ background: '#fff1f0', border: '1px solid #ffccc7', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '28px', fontWeight: 700, marginBottom: '4px', color: '#cf1322' }}>
+                        <div className="step3-stat-number" style={{ color: '#cf1322' }}>
                             {analysisResult.summary?.위반 || analysisResult.results?.filter(r => r.적절성 === '부적절').length || 0}
                         </div>
                         <div style={{ fontSize: '13px', color: '#a8071a' }}>위반</div>
                     </div>
                     <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '28px', fontWeight: 700, marginBottom: '4px', color: '#d48806' }}>
+                        <div className="step3-stat-number" style={{ color: '#d48806' }}>
                             {analysisResult.summary?.경고 || analysisResult.results?.filter(r => r.적절성 === '보완필요').length || 0}
                         </div>
                         <div style={{ fontSize: '13px', color: '#ad6800' }}>보완필요</div>
                     </div>
                     <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '28px', fontWeight: 700, marginBottom: '4px', color: '#389e0d' }}>
+                        <div className="step3-stat-number" style={{ color: '#389e0d' }}>
                             {analysisResult.summary?.준수 || analysisResult.results?.filter(r => r.적절성 === '적절').length || 0}
                         </div>
                         <div style={{ fontSize: '13px', color: '#237804' }}>적절</div>
@@ -122,18 +114,18 @@ const Step3Analysis = ({
                             <div style={{
                                 marginTop: '12px',
                                 padding: '12px',
-                                background: '#fffde7', // 더 연한 노란색
+                                background: '#fffde7',
                                 borderLeft: '4px solid #fbc02d',
                                 borderRadius: '4px',
                                 fontSize: '14px',
                                 color: '#f57f17'
                             }}>
-                                <strong>💡 개선 제안:</strong> {item.개선권고}
+                                <strong>개선 제안:</strong> {item.개선권고}
                             </div>
                         )}
                     </div>
 
-                    {/* 법령 및 DB 태그 (오른쪽 하단) */}
+                    {/* 법령 및 DB 태그 */}
                     <div style={{
                         marginTop: '12px',
                         paddingTop: '12px',
@@ -143,7 +135,6 @@ const Step3Analysis = ({
                         gap: '6px',
                         justifyContent: 'flex-end'
                     }}>
-                        {/* 법령 태그 (String -> Array 변환) */}
                         {(() => {
                             const laws = Array.isArray(item.법적근거)
                                 ? item.법적근거
@@ -178,12 +169,11 @@ const Step3Analysis = ({
                                         e.target.style.color = '#1976d2';
                                     }}
                                 >
-                                    📜 {law}
+                                    {law}
                                 </a>
                             ));
                         })()}
 
-                        {/* DB 태그 (Meta Tag 추출) - 법령 태그와 같은 레벨 */}
                         {(() => {
                             const dbTags = [];
                             const metaRegex = /<meta\s+db="([^"]+)"\s+n="([^"]+)"\s*\/?>/g;
@@ -191,13 +181,11 @@ const Step3Analysis = ({
                             const reasonText = item.판단이유 || "";
 
                             while ((match = metaRegex.exec(reasonText)) !== null) {
-                                // DB_퇴직금 -> 퇴직금 변환
                                 const dbName = match[1].replace('DB_', '');
                                 const topicId = match[2];
                                 dbTags.push({ key: `${dbName} ${topicId}` });
                             }
 
-                            // 기존 연관DB 배열이 있다면 합침 (호환성)
                             if (Array.isArray(item.연관DB)) {
                                 item.연관DB.forEach(db => dbTags.push({ key: db }));
                             }
@@ -213,7 +201,7 @@ const Step3Analysis = ({
                                         style={{
                                             display: 'inline-block',
                                             padding: '4px 10px',
-                                            background: refData ? '#f3e5f5' : '#eee', // 데이터 있으면 보라색, 없으면 회색
+                                            background: refData ? '#f3e5f5' : '#eee',
                                             color: refData ? '#7b1fa2' : '#999',
                                             borderRadius: '4px',
                                             fontSize: '12px',
@@ -235,7 +223,7 @@ const Step3Analysis = ({
                                             }
                                         }}
                                     >
-                                        {refData ? '📚' : '🔒'} {tagKey}
+                                        {refData ? '\ud83d\udcda' : '\ud83d\udd12'} {tagKey}
                                     </span>
                                 );
                             });
@@ -245,37 +233,10 @@ const Step3Analysis = ({
             ))}
 
             {/* 하단 액션 버튼 */}
-            <div style={{
-                marginTop: '40px',
-                textAlign: 'center',
-                paddingTop: '20px',
-                borderTop: '1px solid #eee'
-            }}>
+            <div className="step3-action-footer">
                 <button
+                    className="step3-generate-btn"
                     onClick={onGenerateContract}
-                    style={{
-                        background: '#003366', // Navy theme
-                        color: 'white',
-                        border: 'none',
-                        padding: '16px 40px',
-                        borderRadius: '12px',
-                        fontSize: '18px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(0, 51, 102, 0.3)',
-                        transition: 'all 0.2s',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '12px'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 16px rgba(0, 51, 102, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(0, 51, 102, 0.3)';
-                    }}
                 >
                     <FileText size={24} />
                     수정 계약서 작성하기 (Step 4)
