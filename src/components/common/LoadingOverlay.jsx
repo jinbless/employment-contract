@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../utils/apiClient';
+import { getRandomTip } from '../../data/loadingTips';
 
 // Global set to track tips shown across the entire session to prevent repetition
 const seenTipsHistory = new Set();
@@ -9,7 +10,7 @@ const LoadingOverlay = ({ isAnalyzing, progress }) => {
 
     useEffect(() => {
         if (isAnalyzing) {
-            setTip('💡 근로기준법을 분석하고 있습니다...'); // Initial placeholder
+            setTip(getRandomTip()); // 로컬 팁으로 즉시 표시
 
             const fetchTip = async () => {
                 let attempts = 0;
@@ -30,23 +31,28 @@ const LoadingOverlay = ({ isAnalyzing, progress }) => {
                             }
                         }
                     } catch (error) {
-                        // Silent fail on individual attempt
+                        // API 실패 시 로컬 팁으로 폴백
+                        setTip(getRandomTip());
+                        return;
                     }
                     attempts++;
                 }
 
-                // If we couldn't find a unique one after all attempts, 
-                // it means we effectively exhausted our pool or got unlucky.
-                // Reset history and show the last one we got to ensure rotation continues.
-                if (!foundUnique && lastData && lastData.tip) {
-                    seenTipsHistory.clear();
-                    seenTipsHistory.add(lastData.tip);
-                    setTip(lastData.tip);
+                // If we couldn't find a unique one after all attempts,
+                // reset history and use local fallback
+                if (!foundUnique) {
+                    if (lastData && lastData.tip) {
+                        seenTipsHistory.clear();
+                        seenTipsHistory.add(lastData.tip);
+                        setTip(lastData.tip);
+                    } else {
+                        setTip(getRandomTip());
+                    }
                 }
             };
 
             fetchTip();
-            // Rotate tips every 3 seconds (faster as requested)
+            // Rotate tips every 3 seconds
             const interval = setInterval(fetchTip, 3000);
             return () => clearInterval(interval);
         }
