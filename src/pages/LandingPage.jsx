@@ -122,42 +122,8 @@ const LandingPage = ({ onSelectService }) => {
             </section>
 
             {/* Footer */}
-            <footer className="landing-footer">
-                <div className="landing-footer-grid">
-                    <div>
-                        <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>분석 서비스</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <button onClick={() => onSelectService('contract')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', textAlign: 'left', fontSize: '14px' }}>근로계약서</button>
-                            <button onClick={() => onSelectService('salary')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', textAlign: 'left', fontSize: '14px' }}>임금명세서</button>
-                            <button onClick={() => onSelectService('rule')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', textAlign: 'left', fontSize: '14px' }}>취업규칙</button>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>고객지원</h4>
-                        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>
-                            <p>문의하기</p>
-                            <p>개인정보처리방침</p>
-                            <p>이용약관</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>관련기관</h4>
-                        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>
-                            <p>고용노동부</p>
-                            <p>AI 노동법 상담(ai.moel.go.kr)</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>연락처</h4>
-                        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>
-                            <p style={{ fontWeight: 700, marginBottom: '4px' }}>고용노동부</p>
-                            <p style={{ marginBottom: '8px' }}>(30117) 세종특별자치시 한누리대로 422. 정부세종청사 11동</p>
-                            <p>대표전화 1350(유료, 평일 09시~18시)</p>
-                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '4px', marginBottom: '8px' }}>*평일 근무시간(09:00~18:00) 이후 업무상담은 제한될 수 있습니다.</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="landing-footer-bottom">
+            <footer className="landing-footer" style={{ padding: '24px 48px' }}>
+                <div style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
                     &copy; 2026 고용노동부. All rights reserved.
                 </div>
             </footer>
