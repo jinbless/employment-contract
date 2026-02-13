@@ -19,7 +19,7 @@ const LoadingOverlay = ({ isAnalyzing, progress }) => {
                 // Retry to find a unique tip (increased attempts)
                 while (attempts < 10 && !foundUnique) {
                     try {
-                        const res = await apiClient.get(`/api/tips/random?_t=${Date.now()}`);
+                        const res = await apiClient.get(`/tips/random?_t=${Date.now()}`);
                         const data = await res.json();
                         if (data.tip) {
                             lastData = data;
